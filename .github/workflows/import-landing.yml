@@ -1,0 +1,21 @@
+name: Landing importieren
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/import-landing.yml"
+      - "scripts/import-landing.sh"
+permissions:
+  contents: write
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/import-landing.sh
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public
+          git diff --cached --quiet || git commit -m "Landing 1:1 aus Production importiert (SHA-1 geprüft)"
+          git push
