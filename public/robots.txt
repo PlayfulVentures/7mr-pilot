@@ -1,0 +1,6 @@
+# Alle Suchmaschinen und KI-Crawler (GPTBot, ClaudeBot, PerplexityBot, Google-Extended ...) sind willkommen.
+User-agent: *
+Allow: /
+Disallow: /danke
+
+Sitemap: https://7minutereset.de/sitemap.xml
