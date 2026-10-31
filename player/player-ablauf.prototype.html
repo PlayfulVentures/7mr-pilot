@@ -1,0 +1,599 @@
+<title>Player-Ablauf Pilot</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: Kopf mit der Frage; zwei Spalten (Handy + Zustand | Freispiel + Szenarien); darunter Ereignisse und Versand-Übersicht. Schmal: alles einspaltig. */
+:root{
+  --bg:#f6f4ee; --surface:#fffdf8; --ink:#1d1d1b; --muted:#615e55; --line:#e1dbce;
+  --accent:#2f6b47; --accent-ink:#ffffff; --accent-soft:#e2ede5;
+  --screen:#151916; --screen-fg:#f1efe8; --screen-muted:#a7aea6; --bubble:#f3efe5; --bubble-ink:#1d1d1b;
+  --ok:#2f6b47; --ok-soft:#dcebe0; --warn:#8a5d0c; --warn-soft:#f5e9cc; --mid:#9b4a19; --mid-soft:#f4dfd0; --none:#67645b; --none-soft:#ebe7dc;
+  --flash:#fff1bd;
+  --serif:ui-serif,"New York","Iowan Old Style","Apple Garamond",Georgia,"Noto Serif",serif;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#131512; --surface:#1b1e1a; --ink:#ebeae4; --muted:#a4a399; --line:#2e322c;
+  --accent:#86c49b; --accent-ink:#0f140f; --accent-soft:#213729;
+  --screen:#0b0d0b; --screen-fg:#f1efe8; --screen-muted:#9aa199; --bubble:#262a24; --bubble-ink:#ebeae4;
+  --ok:#86c49b; --ok-soft:#1f3427; --warn:#e3b660; --warn-soft:#382d16; --mid:#ee9d6b; --mid-soft:#3b2619; --none:#a4a399; --none-soft:#272a24;
+  --flash:#4a4020; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#131512; --surface:#1b1e1a; --ink:#ebeae4; --muted:#a4a399; --line:#2e322c;
+  --accent:#86c49b; --accent-ink:#0f140f; --accent-soft:#213729;
+  --screen:#0b0d0b; --screen-fg:#f1efe8; --screen-muted:#9aa199; --bubble:#262a24; --bubble-ink:#ebeae4;
+  --ok:#86c49b; --ok-soft:#1f3427; --warn:#e3b660; --warn-soft:#382d16; --mid:#ee9d6b; --mid-soft:#3b2619; --none:#a4a399; --none-soft:#272a24;
+  --flash:#4a4020; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 72px;display:grid;gap:28px}
+h1,h2,h3{text-wrap:balance;margin:0}
+h1{font-family:var(--serif);font-weight:600;font-size:clamp(28px,5vw,40px);line-height:1.1;letter-spacing:-.015em}
+h2{font-size:13px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.eyebrow{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);font-weight:700}
+header{display:grid;gap:10px;max-width:760px}
+.question{font-size:17px;margin:0}
+.small{font-size:13px;color:var(--muted);margin:0}
+.note{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;padding:12px 14px;display:grid;gap:2px}
+.note b{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.note.flash{animation:flash .9s ease}
+@keyframes flash{from{background:var(--flash)}to{background:var(--surface)}}
+
+.grid{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:28px;align-items:start}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:start}
+@media (max-width:820px){.grid,.grid2{grid-template-columns:minmax(0,1fr)}}
+section{display:grid;gap:12px;min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:12px;min-width:0}
+
+/* Handy */
+.phone{width:min(100%,270px);justify-self:center;border-radius:30px;padding:10px;background:var(--ink)}
+.screen{aspect-ratio:9/16;max-width:100%;border-radius:22px;background:var(--screen);color:var(--screen-fg);padding:14px 14px 18px;display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.bars{display:flex;gap:3px}
+.bars span{height:3px;border-radius:2px;background:rgba(255,255,255,.22);flex:1;position:relative;overflow:hidden}
+.bars span.frame{flex:.35}
+.bars span i{position:absolute;inset:0;background:var(--screen-fg);transform-origin:left;display:block}
+.scr-body{flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:6px}
+.scr-eyebrow{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--screen-muted);font-weight:700}
+.scr-title{font-family:var(--serif);font-size:22px;line-height:1.15;font-weight:600}
+.scr-sub{font-size:13px;color:var(--screen-muted)}
+.scr-tag{align-self:flex-start;font-size:11px;font-weight:700;padding:3px 8px;border-radius:99px;background:rgba(255,255,255,.14)}
+.scr-btn{margin-top:8px;border:0;border-radius:12px;padding:11px 12px;font:inherit;font-weight:600;font-size:14px;background:var(--screen-fg);color:var(--screen);cursor:pointer}
+.scr-btn:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.bubble{background:var(--bubble);color:var(--bubble-ink);border-radius:14px;border-top-left-radius:4px;padding:10px 12px;font-size:14px;display:grid;gap:4px;align-self:flex-start;max-width:92%}
+.bubble small{color:var(--muted);font-size:11px;font-weight:700}
+
+/* Zustand */
+dl{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 14px;font-size:14px}
+dt{color:var(--muted)}
+dd{margin:0;font-weight:600;font-variant-numeric:tabular-nums;border-radius:4px;padding:0 4px;margin-left:-4px}
+dd.changed{background:var(--flash)}
+
+/* Steuerung */
+.controls{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}
+.controls label{display:flex;gap:6px;align-items:center;font-size:14px}
+select{font:inherit;padding:5px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+button.act{font:inherit;font-size:14px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:8px 12px;cursor:pointer}
+button.act:hover:not(:disabled){border-color:var(--accent)}
+button.act:disabled{opacity:.38;cursor:not-allowed}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+/* Szenarien */
+.tabs{display:flex;flex-wrap:wrap;gap:6px}
+.tab{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:99px;padding:6px 12px;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.scen-desc{margin:0;max-width:68ch}
+.watch{margin:0;font-size:14px;max-width:68ch}
+.watch b{color:var(--accent)}
+.ask{margin:0;font-size:14px;max-width:68ch;background:var(--warn-soft);border-radius:10px;padding:10px 12px}
+ol.steps{margin:0;padding:0;list-style:none;display:grid;gap:6px;counter-reset:s}
+ol.steps li{display:flex;gap:10px;align-items:center;counter-increment:s}
+ol.steps li:before{content:counter(s);width:22px;height:22px;border-radius:50%;flex:none;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;background:var(--none-soft);color:var(--muted)}
+ol.steps li.done:before{content:"✓";background:var(--ok-soft);color:var(--ok)}
+ol.steps li.next:before{background:var(--accent);color:var(--accent-ink)}
+ol.steps button{font:inherit;font-size:14px;text-align:left;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:7px 12px;cursor:pointer;flex:1;min-width:0}
+ol.steps li.next button{border-color:var(--accent);background:var(--accent-soft)}
+ol.steps button:disabled{cursor:default;opacity:.55}
+ol.steps li.done button{opacity:.6}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+
+/* Ereignisse und Übersicht */
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+th{text-align:left;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:6px 8px;border-bottom:1px solid var(--line)}
+td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+td.mono{font-family:var(--mono);font-size:13px}
+tr.new td{background:var(--flash)}
+tr.me td:first-child{font-weight:700}
+.pill{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:99px}
+.pill.offen{background:var(--none-soft);color:var(--none)}
+.pill.geoeffnet{background:var(--warn-soft);color:var(--warn)}
+.pill.angefangen{background:var(--mid-soft);color:var(--mid)}
+.pill.fertig{background:var(--ok-soft);color:var(--ok)}
+.cell-detail{display:block;font-size:12px;color:var(--muted)}
+.live{display:block;font-size:12px;color:var(--mid);font-weight:600}
+.empty{color:var(--muted);font-size:14px;margin:0}
+.remind{font-size:14px;margin:0}
+@media (prefers-reduced-motion:reduce){.note.flash{animation:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Prototyp · Wegwerf-Code</span>
+    <h1>Player-Ablauf im Pilot</h1>
+    <p class="question"><strong>Frage:</strong> Läuft eine Session mit einem einzigen Tipp durch? Senden wir die richtigen Ereignisse? Und zeigt die Versand-Übersicht daraus den richtigen Status, auch wenn jemand abbricht, nachholt oder den Link weiterleitet?</p>
+    <p class="small">Alles läuft nur in diesem Browser. Nichts wird gespeichert oder verschickt. Eine Session: Hallo, 5 Übungen mit je 15 Sekunden Pause, Abschluss.</p>
+  </header>
+
+  <div class="note" id="note" role="status"><b>Gerade passiert</b><span id="noteText"></span></div>
+
+  <div class="grid">
+    <section aria-labelledby="h-state">
+      <h2 id="h-state">Was am Handy passiert</h2>
+      <div class="phone"><div class="screen" id="screen"></div></div>
+      <div class="panel"><dl id="state"></dl></div>
+    </section>
+
+    <div style="display:grid;gap:28px;min-width:0">
+      <section aria-labelledby="h-free">
+        <h2 id="h-free">Freispiel</h2>
+        <div class="panel">
+          <div class="controls">
+            <label for="who">Am Handy <select id="who"></select></label>
+            <label for="day">Link für <select id="day"></select></label>
+            <label for="today">Heute ist <select id="today"></select></label>
+          </div>
+          <div class="controls">
+            <label for="autoplay"><input type="checkbox" id="autoplay"> Annahme: iPhone spielt nach einer Pause von selbst weiter</label>
+            <label for="resume"><input type="checkbox" id="resume"> Beim erneuten Öffnen dort weitermachen, wo man aufgehört hat</label>
+          </div>
+          <div class="btns" id="actions"></div>
+        </div>
+      </section>
+
+      <section aria-labelledby="h-scen">
+        <h2 id="h-scen">Szenarien</h2>
+        <div class="panel">
+          <div class="tabs" role="tablist" id="tabs"></div>
+          <div id="scen"></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <section aria-labelledby="h-ev">
+      <h2 id="h-ev">Gesendete Ereignisse</h2>
+      <div class="panel"><div class="tablewrap" id="events"></div></div>
+    </section>
+    <section aria-labelledby="h-ov">
+      <h2 id="h-ov">Versand-Übersicht, abgeleitet aus den Ereignissen</h2>
+      <div class="panel"><div class="tablewrap" id="overview"></div><p class="remind" id="remind"></p></div>
+    </section>
+  </div>
+</div>
+
+<script>
+// ===== Logik: rein, ohne DOM. Dieser Block ist der Teil, der in den echten Player wandern kann. =====
+const PilotFlow = (() => {
+  const SESSION = {
+    hallo: { title: 'Jescher sagt Hallo', sec: 6 },
+    exercises: [
+      { title: 'Oberschenkel vorn', sec: 75 },
+      { title: 'Schulter & oberer Rücken', sec: 70 },
+      { title: 'Brust & Schultern', sec: 40 },
+      { title: 'Ganzkörper-Minute', sec: 90, hold: 60 },
+      { title: 'Drehsitz für Po & Rücken', sec: 85 },
+    ],
+    outro: { title: 'Das waren deine 7 Minuten.', sec: 10 },
+    pauseSec: 15,
+  };
+  const PEOPLE = ['Anna', 'Ben', 'Clara'];
+  const DAYS = [1, 2, 3];
+  const N = SESSION.exercises.length;
+  const PLAYING = ['hallo', 'uebung', 'outro'];
+
+  function initialWorld(o = {}) {
+    const today = o.today ?? 1;
+    return {
+      today, clock: 7 * 3600 + 30 * 60,
+      settings: { autoplay: o.autoplay ?? true, resume: o.resume ?? false },
+      who: o.who ?? 'Anna', day: o.day ?? today,
+      run: null, events: [], seq: 0,
+      note: 'Die Nachricht mit dem Link ist da. Noch nichts geöffnet.',
+    };
+  }
+
+  function legal(w, type) {
+    const r = w.run;
+    switch (type) {
+      case 'choose': case 'setToday': case 'toggleAutoplay': case 'toggleResume': return true;
+      case 'open': return !r;
+      case 'tapStart': return !!r && r.phase === 'bereit';
+      case 'clipEnds': return !!r && PLAYING.includes(r.phase) && !r.paused;
+      case 'countdownEnds': return !!r && r.phase === 'pause' && !r.paused;
+      case 'startNow': return !!r && r.phase === 'pause';
+      case 'tapContinue': return !!r && r.phase === 'tippen';
+      case 'pauseToggle': return !!r && (PLAYING.includes(r.phase) || r.phase === 'pause');
+      case 'hide': return !!r && (PLAYING.includes(r.phase) || r.phase === 'pause') && !r.paused;
+      case 'videoError': return !!r && PLAYING.includes(r.phase);
+      case 'retry': return !!r && r.phase === 'fehler';
+      case 'close': return !!r;
+      case 'again': return !!r && r.phase === 'fertig';
+      default: return false;
+    }
+  }
+
+  const tick = (w, sec) => ({ ...w, clock: w.clock + sec });
+  const withRun = (w, patch) => ({ ...w, run: { ...w.run, ...patch } });
+  function emit(w, name, extra = {}) {
+    const seq = w.seq + 1;
+    return { ...w, seq, events: [...w.events, { seq, who: w.who, day: w.day, today: w.today, time: w.clock, name, ...extra }] };
+  }
+  function startExercise(w, i, note) {
+    const nw = emit(withRun(w, { phase: 'uebung', i, paused: false }), 'uebung_gestartet', { i: i + 1 });
+    return { ...nw, note };
+  }
+  function startNext(w, how) {
+    const next = w.run.next;
+    if (next === 'outro') return { ...withRun(w, { phase: 'outro', paused: false }), note: 'Der Abschluss läuft.' };
+    return startExercise(w, next, `Übung ${next + 1} startet ${how}.`);
+  }
+  function startNextOrWait(w, how) {
+    if (w.settings.autoplay) return startNext(w, how);
+    return { ...withRun(w, { phase: 'tippen', paused: false }), note: 'Das iPhone startet das nächste Video nicht von selbst. Es braucht einen Tipp.' };
+  }
+  function lastStartedIndex(events, who, day) {
+    const own = events.filter(e => e.who === who && e.day === day);
+    if (own.some(e => e.name === 'session_beendet')) return null;
+    const started = own.filter(e => e.name === 'uebung_gestartet').map(e => e.i - 1);
+    return started.length ? Math.max(...started) : null;
+  }
+
+  function dispatch(w, a) {
+    if (!legal(w, a.type)) return { ...w, note: 'Das geht in diesem Moment nicht.' };
+    const r = w.run;
+    switch (a.type) {
+      case 'choose': {
+        const who = a.who ?? w.who, day = a.day ?? w.day;
+        return { ...w, who, day, run: null, note: (r ? 'Der offene Tab wurde geschlossen. ' : '') + `Am Handy: ${who}, Link für Tag ${day}.` };
+      }
+      case 'setToday': return { ...w, today: a.today, note: `Heute ist Pilot-Tag ${a.today}.` };
+      case 'toggleAutoplay': {
+        const autoplay = !w.settings.autoplay;
+        return { ...w, settings: { ...w.settings, autoplay }, note: autoplay ? 'Annahme an: Nach dem ersten Tipp spielt der Player von selbst weiter.' : 'Annahme aus: Das iPhone will vor jedem neuen Video einen Tipp.' };
+      }
+      case 'toggleResume': {
+        const resume = !w.settings.resume;
+        return { ...w, settings: { ...w.settings, resume }, note: resume ? 'Fortsetzen an: Wer erneut öffnet, macht bei der letzten Übung weiter.' : 'Fortsetzen aus: Wer erneut öffnet, fängt beim Hallo an.' };
+      }
+      case 'open': {
+        if (w.day > w.today) {
+          return { ...w, run: { phase: 'zufrueh', i: 0, paused: false, unlocked: false, taps: 0 }, note: `Den Link für Tag ${w.day} gibt es noch nicht. Wer die Adresse von Hand ändert, sieht nur einen Hinweis. Gezählt wird nichts.` };
+        }
+        const resumeFrom = w.settings.resume ? lastStartedIndex(w.events, w.who, w.day) : null;
+        const nw = emit({ ...w, run: { phase: 'bereit', i: resumeFrom ?? 0, next: null, paused: false, unlocked: false, taps: 0, startedAt: null, resumeFrom } }, 'session_geoeffnet');
+        return { ...nw, note: resumeFrom != null ? `Link geöffnet. Der Player bietet „Weiter bei Übung ${resumeFrom + 1}“ an.` : 'Link geöffnet. Der Startbildschirm wartet auf einen Tipp.' };
+      }
+      case 'tapStart': {
+        const nw = tick(withRun(w, { unlocked: true, taps: r.taps + 1, startedAt: w.clock }), 2);
+        if (r.resumeFrom != null) return startExercise(nw, r.resumeFrom, `Der Tipp schaltet Video und Ton frei. Es geht direkt mit Übung ${r.resumeFrom + 1} weiter.`);
+        return { ...withRun(nw, { phase: 'hallo' }), note: 'Der Tipp schaltet Video und Ton frei. Jescher sagt Hallo.' };
+      }
+      case 'clipEnds': {
+        if (r.phase === 'hallo') return startNextOrWait(withRun(tick(w, SESSION.hallo.sec), { next: 0 }), 'von selbst');
+        if (r.phase === 'uebung') {
+          let nw = emit(tick(w, SESSION.exercises[r.i].sec), 'uebung_beendet', { i: r.i + 1 });
+          if (r.i === N - 1) {
+            nw = emit(nw, 'session_beendet', { dauer: nw.clock - r.startedAt });
+            const out = startNextOrWait(withRun(nw, { next: 'outro' }), 'von selbst');
+            return { ...out, note: 'Letzte Übung geschafft. Ab hier zählt der Tag als erledigt, auch wenn jemand den Abschluss abbricht. ' + out.note };
+          }
+          nw = withRun(nw, { phase: 'pause', next: r.i + 1, paused: false });
+          return { ...nw, note: `Übung ${r.i + 1} ist zu Ende, Holz-Ton. Die Pausenkarte zeigt Übung ${r.i + 2}, deren Video lädt schon.` };
+        }
+        return { ...withRun(tick(w, SESSION.outro.sec), { phase: 'fertig' }), note: 'Abschluss zu Ende: „Bis morgen.“' };
+      }
+      case 'countdownEnds': return startNextOrWait(tick(w, SESSION.pauseSec), 'von selbst nach der Pause');
+      case 'startNow': return startNext(withRun(tick(w, 5), { taps: r.taps + 1, unlocked: true }), 'sofort');
+      case 'tapContinue': return startNext(withRun(tick(w, 1), { taps: r.taps + 1 }), 'nach dem Tipp');
+      case 'pauseToggle': {
+        const paused = !r.paused;
+        return { ...withRun(tick(w, 1), { paused, taps: r.taps + 1 }), note: paused ? 'Pausiert. Es wird nichts gesendet.' : 'Läuft weiter.' };
+      }
+      case 'hide': return { ...withRun(w, { paused: true }), note: 'Handy gesperrt oder App gewechselt: Der Player pausiert von selbst.' };
+      case 'videoError': return { ...withRun(w, { phase: 'fehler', errorFrom: r.phase }), note: 'Das Video lädt nicht. Der Player zeigt „Erneut versuchen“. Es wird nichts gesendet.' };
+      case 'retry': return { ...withRun(tick(w, 3), { phase: r.errorFrom, paused: false, taps: r.taps + 1 }), note: 'Neuer Versuch. Der Clip startet von vorn.' };
+      case 'close': return { ...w, run: null, note: 'Tab geschlossen. Dabei geht nichts raus. Den Abbruch sieht man nur an den bisherigen Ereignissen.' };
+      case 'again': return { ...w, run: { phase: 'hallo', i: 0, next: null, paused: false, unlocked: true, taps: r.taps + 1, startedAt: w.clock, resumeFrom: null }, note: 'Nochmal von vorn. Alle Übungs-Ereignisse kommen ein zweites Mal.' };
+    }
+    return w;
+  }
+
+  function fmtDur(s) { return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')} Min`; }
+
+  function dayStatus(events, who, day) {
+    const own = events.filter(e => e.who === who && e.day === day);
+    const done = own.find(e => e.name === 'session_beendet');
+    if (done) return { key: 'fertig', label: 'Fertig', detail: `in ${fmtDur(done.dauer)}` + (done.today > day ? `, nachgeholt an Tag ${done.today}` : '') };
+    const started = own.filter(e => e.name === 'uebung_gestartet');
+    if (started.length) return { key: 'angefangen', label: 'Angefangen', detail: `zuletzt Übung ${Math.max(...started.map(e => e.i))} von ${N}` };
+    if (own.some(e => e.name === 'session_geoeffnet')) return { key: 'geoeffnet', label: 'Geöffnet', detail: 'nicht gestartet' };
+    return { key: 'offen', label: 'Offen', detail: 'Link nicht geöffnet' };
+  }
+  const reminderFor = (events, day) => PEOPLE.filter(p => dayStatus(events, p, day).key !== 'fertig');
+
+  return { SESSION, PEOPLE, DAYS, N, initialWorld, dispatch, legal, dayStatus, reminderFor, fmtDur };
+})();
+
+// ===== Seite: dünne Schale um die Logik. =====
+const F = PilotFlow;
+const $ = id => document.getElementById(id);
+let world = F.initialWorld();
+let prevFields = {};
+let prevSeq = 0;
+let scen = { idx: null, step: 0 };
+
+const A = {
+  open: { type: 'open' }, tapStart: { type: 'tapStart' }, clipEnds: { type: 'clipEnds' },
+  countdownEnds: { type: 'countdownEnds' }, startNow: { type: 'startNow' }, tapContinue: { type: 'tapContinue' },
+  pauseToggle: { type: 'pauseToggle' }, hide: { type: 'hide' }, videoError: { type: 'videoError' },
+  retry: { type: 'retry' }, close: { type: 'close' }, again: { type: 'again' },
+};
+const ACTION_LABELS = [
+  ['open', 'Link öffnen'], ['tapStart', 'Auf Start tippen'], ['clipEnds', 'Clip läuft zu Ende'],
+  ['countdownEnds', 'Pause läuft ab'], ['startNow', '„Jetzt starten“ tippen'], ['tapContinue', 'Zum Weiterspielen tippen'],
+  ['pauseToggle', 'Pause tippen'], ['hide', 'Handy sperren'], ['videoError', 'Video lädt nicht'],
+  ['retry', 'Erneut versuchen'], ['close', 'Tab schließen'], ['again', 'Nochmal machen'],
+];
+
+const rep = (n, acts) => Array.from({ length: n }, () => acts).flat();
+const SCENARIOS = [
+  { name: 'Normaler Tag', setup: { who: 'Anna', day: 1, today: 1 },
+    desc: 'Anna öffnet morgens den Link und macht die Session in einem Rutsch.',
+    watch: 'Es braucht <b>genau einen Tipp</b>. „session_beendet“ kommt am Ende von Übung 5, noch vor dem Abschluss.',
+    steps: [
+      ['Link aus WhatsApp öffnen', [A.open]], ['Auf Start tippen', [A.tapStart]], ['Hallo läuft zu Ende', [A.clipEnds]],
+      ['Übung 1 läuft zu Ende', [A.clipEnds]], ['Pause läuft ab', [A.countdownEnds]],
+      ['Übungen 2 bis 4 laufen durch, mit Pausen', rep(3, [A.clipEnds, A.countdownEnds])],
+      ['Übung 5 läuft zu Ende', [A.clipEnds]], ['Abschluss läuft zu Ende', [A.clipEnds]],
+      ['Abends nochmal machen', [A.again, ...rep(1, [A.clipEnds]), ...rep(4, [A.clipEnds, A.countdownEnds]), A.clipEnds]],
+    ],
+    ask: 'Wer die Session zweimal macht, erzeugt alle Ereignisse doppelt. Die Übersicht bleibt bei „Fertig“ mit der ersten Dauer. Reicht dir das?' },
+  { name: 'Schließt im Abschluss', setup: { who: 'Ben', day: 1, today: 1 },
+    desc: 'Ben macht alle Übungen, schließt aber den Tab, während der Abschluss läuft.',
+    watch: 'Ben steht trotzdem auf <b>Fertig</b>, weil der Tag mit dem Ende der letzten Übung zählt.',
+    steps: [
+      ['Link öffnen', [A.open]], ['Auf Start tippen', [A.tapStart]],
+      ['Hallo und Übungen 1 bis 4 laufen durch', [A.clipEnds, ...rep(4, [A.clipEnds, A.countdownEnds])]],
+      ['Übung 5 läuft zu Ende', [A.clipEnds]], ['Tab im Abschluss schließen', [A.close]],
+    ] },
+  { name: 'Abbruch bei Übung 3', setup: { who: 'Clara', day: 1, today: 1, resume: false },
+    desc: 'Clara wird bei Übung 3 unterbrochen und schließt den Tab. Abends öffnet sie den Link noch einmal.',
+    watch: 'Nach dem Schließen geht <b>kein Ereignis</b> raus. Die Übersicht zeigt „Angefangen, zuletzt Übung 3“. Beim neuen Öffnen fängt sie beim Hallo an.',
+    steps: [
+      ['Link öffnen', [A.open]], ['Auf Start tippen', [A.tapStart]],
+      ['Hallo, Übung 1 und 2 laufen durch', [A.clipEnds, ...rep(2, [A.clipEnds, A.countdownEnds])]],
+      ['Bei Übung 3 den Tab schließen', [A.close]], ['Abends den Link nochmal öffnen', [A.open]], ['Auf Start tippen', [A.tapStart]],
+    ],
+    ask: 'Soll Clara beim Hallo anfangen oder bei Übung 3 weitermachen? Vergleiche mit dem nächsten Szenario.' },
+  { name: 'Abbruch mit Fortsetzen', setup: { who: 'Clara', day: 1, today: 1, resume: true },
+    desc: 'Wie eben, aber „dort weitermachen, wo man aufgehört hat“ ist eingeschaltet.',
+    watch: 'Beim neuen Öffnen steht <b>„Weiter bei Übung 3“</b> auf dem Knopf. Die Dauer zählt dann nur ab dem Weitermachen.',
+    steps: [
+      ['Link öffnen', [A.open]], ['Auf Start tippen', [A.tapStart]],
+      ['Hallo, Übung 1 und 2 laufen durch', [A.clipEnds, ...rep(2, [A.clipEnds, A.countdownEnds])]],
+      ['Bei Übung 3 den Tab schließen', [A.close]], ['Abends den Link nochmal öffnen', [A.open]],
+      ['„Weiter bei Übung 3“ tippen', [A.tapStart]], ['Übung 3 und 4 laufen durch', rep(2, [A.clipEnds, A.countdownEnds])],
+      ['Übung 5 läuft zu Ende', [A.clipEnds]],
+    ] },
+  { name: 'iPhone will Tipps', setup: { who: 'Anna', day: 1, today: 1, autoplay: false },
+    desc: 'Was passiert, wenn unsere Annahme falsch ist und das iPhone vor jedem neuen Video einen Tipp verlangt.',
+    watch: 'Achte auf <b>„Tipps in diesem Durchgang“</b>. Für eine ganze Session wären es 7 statt 1, so wie im alten Player.',
+    steps: [
+      ['Link öffnen', [A.open]], ['Auf Start tippen', [A.tapStart]], ['Hallo läuft zu Ende', [A.clipEnds]],
+      ['Zum Weiterspielen tippen', [A.tapContinue]], ['Übung 1 läuft zu Ende', [A.clipEnds]], ['Pause läuft ab', [A.countdownEnds]],
+      ['Zum Weiterspielen tippen', [A.tapContinue]],
+    ],
+    ask: 'Diese Annahme muss als Erstes auf einem echten iPhone getestet werden. Fällt sie, brauchen wir einen anderen Weg (zum Beispiel ein durchgehendes Video pro Tag).' },
+  { name: 'Handy gesperrt', setup: { who: 'Anna', day: 1, today: 1 },
+    desc: 'Anna sperrt mitten in Übung 1 kurz das Handy und macht dann weiter.',
+    watch: 'Der Player <b>pausiert von selbst</b> und sendet nichts. Weiter geht es mit einem Tipp.',
+    steps: [
+      ['Link öffnen', [A.open]], ['Auf Start tippen', [A.tapStart]], ['Hallo läuft zu Ende', [A.clipEnds]],
+      ['Handy sperren', [A.hide]], ['Entsperren und „Weiter“ tippen', [A.pauseToggle]], ['Übung 1 läuft zu Ende', [A.clipEnds]],
+    ] },
+  { name: 'Nachgeholt', setup: { who: 'Ben', day: 2, today: 3 },
+    desc: 'Heute ist Tag 3. Ben hat Tag 2 verpasst und holt ihn mit dem alten Link nach.',
+    watch: 'Die Übersicht zeigt Tag 2 als <b>„Fertig, nachgeholt an Tag 3“</b>. Für Tag 3 steht Ben trotzdem auf der Erinnerungsliste.',
+    steps: [
+      ['Link von Tag 2 öffnen', [A.open]], ['Auf Start tippen', [A.tapStart]],
+      ['Die ganze Session läuft durch', [A.clipEnds, ...rep(4, [A.clipEnds, A.countdownEnds]), A.clipEnds, A.clipEnds]],
+    ] },
+  { name: 'Weitergeleiteter Link', setup: { who: 'Clara', day: 1, today: 1 },
+    desc: 'Clara leitet ihren Link an ihren Partner weiter. Er macht die Session, Clara nicht.',
+    watch: 'Die Übersicht zeigt <b>Clara als fertig</b>. Am Link ist nicht zu erkennen, wer am Handy sitzt.',
+    steps: [
+      ['Partner öffnet Claras Link', [A.open]], ['Auf Start tippen', [A.tapStart]],
+      ['Die ganze Session läuft durch', [A.clipEnds, ...rep(4, [A.clipEnds, A.countdownEnds]), A.clipEnds, A.clipEnds]],
+    ],
+    ask: 'Für den Pilot nehmen wir das in Kauf: Der Link öffnet kein Konto, er zählt nur falsch. Einverstanden?' },
+  { name: 'Video lädt nicht', setup: { who: 'Anna', day: 1, today: 1 },
+    desc: 'Im Funkloch lädt Übung 1 nicht.',
+    watch: 'Der Fehler erzeugt <b>kein Ereignis</b>. In der Übersicht sieht ein Ladeproblem aus wie ein Abbruch.',
+    steps: [
+      ['Link öffnen', [A.open]], ['Auf Start tippen', [A.tapStart]], ['Hallo läuft zu Ende', [A.clipEnds]],
+      ['Übung 1 lädt nicht', [A.videoError]], ['Erneut versuchen', [A.retry]], ['Übung 1 läuft zu Ende', [A.clipEnds]],
+    ],
+    ask: 'Sollen Ladefehler als eigenes Ereignis zählen, damit du Technik-Probleme von echten Abbrüchen trennen kannst?' },
+  { name: 'Link von morgen', setup: { who: 'Anna', day: 1, today: 1 },
+    desc: 'Anna ändert die Adresse von Hand von Tag 1 auf Tag 2.',
+    watch: 'Der Player zeigt nur einen Hinweis. <b>Es wird nichts gezählt</b>, die Übersicht bleibt, wie sie ist.',
+    steps: [
+      ['Link auf Tag 2 ändern', [{ type: 'choose', day: 2 }]], ['Link öffnen', [A.open]],
+    ] },
+];
+
+function apply(actions) {
+  for (const a of actions) world = F.dispatch(world, a);
+}
+function canRun(actions) {
+  let w = world;
+  for (const a of actions) { if (!F.legal(w, a.type)) return false; w = F.dispatch(w, a); }
+  return true;
+}
+
+function clock(s) { const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60); return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`; }
+
+function phoneHTML(w) {
+  const r = w.run, S = F.SESSION;
+  const segs = ['frame', ...S.exercises.map(() => ''), 'frame'];
+  // Segment 0 = Hallo, 1..N = Übungen, N+1 = Abschluss. done = fertige Segmente, cur = laufendes Segment.
+  let done = 0, cur = -1;
+  if (r) {
+    const at = ph => ph === 'hallo' ? 0 : ph === 'outro' ? F.N + 1 : r.i + 1;
+    if (['hallo', 'uebung', 'outro'].includes(r.phase)) { cur = at(r.phase); done = cur; }
+    else if (r.phase === 'fehler') { cur = at(r.errorFrom); done = cur; }
+    else if (r.phase === 'pause' || r.phase === 'tippen') done = r.next === 'outro' ? F.N + 1 : r.next + 1;
+    else if (r.phase === 'fertig') done = F.N + 2;
+  }
+  const fills = segs.map((_, k) => k < done ? 1 : k === cur ? 0.5 : 0);
+  const bars = `<div class="bars" aria-hidden="true">${segs.map((c, k) => `<span class="${c}"><i style="transform:scaleX(${fills[k]})"></i></span>`).join('')}</div>`;
+  const btn = (label, act) => `<button class="scr-btn" data-act="${act}">${label}</button>`;
+  const paused = r && r.paused ? '<span class="scr-tag">Pausiert</span>' : '';
+  if (!r) {
+    const future = w.day > w.today;
+    return `<div class="scr-body" style="justify-content:flex-start"><div class="bubble"><small>7mr · WhatsApp</small>Tag ${w.day}: Deine 7 Minuten warten.${future ? '<br><em>Diese Nachricht kommt erst an Tag ' + w.day + '.</em>' : ''}</div></div>${btn(future ? 'Adresse trotzdem öffnen' : 'Session starten', 'open')}`;
+  }
+  const body = (eyebrow, title, sub, extra = '') => `${bars}<div class="scr-body">${paused}<span class="scr-eyebrow">${eyebrow}</span><span class="scr-title">${title}</span>${sub ? `<span class="scr-sub">${sub}</span>` : ''}${extra}</div>`;
+  switch (r.phase) {
+    case 'zufrueh': return `<div class="scr-body"><span class="scr-eyebrow">Tag ${w.day}</span><span class="scr-title">Gibt es ab Tag ${w.day}.</span><span class="scr-sub">Heute wartet Tag ${w.today} auf dich.</span></div>`;
+    case 'bereit': return body(`Tag ${w.day} · Mobility`, 'Lockern und dehnen.', '5 Übungen · 7 Minuten · nur eine Matte', btn(r.resumeFrom != null ? `Weiter bei Übung ${r.resumeFrom + 1}` : 'Starten', 'tapStart'));
+    case 'hallo': return body('Hallo', S.hallo.title, 'Nah dran, dann Zoom auf die Totale');
+    case 'uebung': { const ex = S.exercises[r.i]; return body(`Übung ${r.i + 1} von ${F.N}`, ex.title, ex.hold ? `${ex.hold}-Sekunden-Ring läuft · Untertitel unten` : 'Untertitel unten'); }
+    case 'pause': { const nx = S.exercises[r.next]; return body(`Als Nächstes · ${r.next + 1} von ${F.N}`, nx.title, r.paused ? 'Countdown angehalten' : 'Video lädt schon im Hintergrund', btn(`Weiter in ${S.pauseSec} Sek · oder jetzt starten`, 'startNow')); }
+    case 'tippen': return body('Pause vorbei', 'Tippen zum Weiterspielen', 'Das iPhone wartet auf einen Tipp', btn('Weiterspielen', 'tapContinue'));
+    case 'outro': return body('Geschafft', S.outro.title, 'Zählt schon als erledigt');
+    case 'fertig': return body('Fertig', 'Bis morgen.', '', btn('Nochmal machen', 'again'));
+    case 'fehler': return body('Problem', 'Das Video lädt nicht.', 'Bitte Verbindung prüfen.', btn('Erneut versuchen', 'retry'));
+  }
+  return '';
+}
+
+const PHASE_LABEL = { bereit: 'Startbildschirm', hallo: 'Hallo-Clip', uebung: 'Übung läuft', pause: 'Pausenkarte', tippen: 'Wartet auf Tipp', outro: 'Abschluss', fertig: 'Fertig-Bildschirm', fehler: 'Ladefehler', zufrueh: 'Hinweis: zu früh' };
+
+function stateFields(w) {
+  const r = w.run;
+  return [
+    ['Am Handy', `${w.who}, Link für Tag ${w.day}`],
+    ['Heute ist', `Tag ${w.today}`],
+    ['Uhrzeit', clock(w.clock)],
+    ['Bildschirm', r ? PHASE_LABEL[r.phase] : 'Noch nicht geöffnet'],
+    ['Übung', r && r.phase === 'uebung' ? `${r.i + 1} von ${F.N}` : r && (r.phase === 'pause' || r.phase === 'tippen') && r.next !== 'outro' && r.next != null ? `als Nächstes ${r.next + 1}` : '–'],
+    ['Video und Ton freigeschaltet', r ? (r.unlocked ? 'ja' : 'nein') : '–'],
+    ['Pausiert', r ? (r.paused ? 'ja' : 'nein') : '–'],
+    ['Tipps in diesem Durchgang', r ? String(r.taps) : '–'],
+    ['Weiterspielen ohne Tipp', w.settings.autoplay ? 'klappt (Annahme)' : 'klappt nicht'],
+    ['Fortsetzen nach Abbruch', w.settings.resume ? 'an' : 'aus'],
+  ];
+}
+
+const EV_LABEL = { session_geoeffnet: 'session_geoeffnet', uebung_gestartet: 'uebung_gestartet', uebung_beendet: 'uebung_beendet', session_beendet: 'session_beendet' };
+function eventDetail(e) {
+  if (e.name === 'uebung_gestartet' || e.name === 'uebung_beendet') return `Übung ${e.i}`;
+  if (e.name === 'session_beendet') return `Dauer ${F.fmtDur(e.dauer)}`;
+  return '';
+}
+
+function render() {
+  const w = world;
+  $('noteText').textContent = w.note;
+  const note = $('note'); note.classList.remove('flash'); void note.offsetWidth; note.classList.add('flash');
+
+  $('screen').innerHTML = phoneHTML(w);
+  $('screen').querySelectorAll('[data-act]').forEach(b => b.addEventListener('click', () => { apply([A[b.dataset.act]]); render(); }));
+
+  const fields = stateFields(w);
+  $('state').innerHTML = fields.map(([k, v]) => `<dt>${k}</dt><dd class="${prevFields[k] !== undefined && prevFields[k] !== v ? 'changed' : ''}">${v}</dd>`).join('');
+  prevFields = Object.fromEntries(fields);
+
+  $('who').value = w.who; $('day').value = String(w.day); $('today').value = String(w.today);
+  $('autoplay').checked = w.settings.autoplay; $('resume').checked = w.settings.resume;
+  $('actions').innerHTML = ACTION_LABELS.map(([k, label]) => {
+    const l = k === 'pauseToggle' && w.run && w.run.paused ? 'Weiter tippen' : label;
+    return `<button class="act" data-a="${k}" ${F.legal(w, A[k].type) ? '' : 'disabled'}>${l}</button>`;
+  }).join('');
+  $('actions').querySelectorAll('[data-a]').forEach(b => b.addEventListener('click', () => { apply([A[b.dataset.a]]); render(); }));
+
+  const evs = [...w.events].reverse();
+  $('events').innerHTML = evs.length
+    ? `<table><thead><tr><th>Uhrzeit</th><th>Wer</th><th>Tag</th><th>Ereignis</th><th>Details</th></tr></thead><tbody>${evs.map(e => `<tr class="${e.seq > prevSeq ? 'new' : ''}"><td>${clock(e.time)}</td><td>${e.who}</td><td>${e.day}${e.today > e.day ? ` <span class="cell-detail">an Tag ${e.today}</span>` : ''}</td><td class="mono">${EV_LABEL[e.name]}</td><td>${eventDetail(e)}</td></tr>`).join('')}</tbody></table>`
+    : '<p class="empty">Noch keine Ereignisse. Das erste kommt, sobald jemand den Link öffnet.</p>';
+  prevSeq = w.seq;
+
+  const live = w.run && !['fertig', 'zufrueh'].includes(w.run.phase);
+  $('overview').innerHTML = `<table><thead><tr><th>Teilnehmer</th>${F.DAYS.map(d => `<th>Tag ${d}${d === w.today ? ' · heute' : ''}</th>`).join('')}</tr></thead><tbody>${F.PEOPLE.map(p => `<tr class="${p === w.who ? 'me' : ''}"><td>${p}</td>${F.DAYS.map(d => {
+    if (d > w.today) return '<td><span class="cell-detail">noch nicht verschickt</span></td>';
+    const s = F.dayStatus(w.events, p, d);
+    const isLive = live && p === w.who && d === w.day && s.key !== 'fertig';
+    return `<td><span class="pill ${s.key}">${s.label}</span><span class="cell-detail">${s.detail}</span>${isLive ? '<span class="live">läuft gerade am Handy, das sieht die Übersicht nicht</span>' : ''}</td>`;
+  }).join('')}</tr>`).join('')}</tbody></table>`;
+  const rem = F.reminderFor(w.events, w.today);
+  $('remind').innerHTML = `<strong>Erinnerung für Tag ${w.today} heute Abend an:</strong> ${rem.length ? rem.join(', ') : 'niemand, alle sind fertig'}`;
+
+  renderScenario();
+}
+
+function renderTabs() {
+  $('tabs').innerHTML = SCENARIOS.map((s, i) => `<button class="tab" role="tab" aria-selected="${scen.idx === i}" data-i="${i}">${s.name}</button>`).join('');
+  $('tabs').querySelectorAll('[data-i]').forEach(b => b.addEventListener('click', () => startScenario(+b.dataset.i)));
+}
+
+function startScenario(i) {
+  const s = SCENARIOS[i];
+  scen = { idx: i, step: 0 };
+  world = F.initialWorld(s.setup);
+  world = { ...world, note: `Szenario „${s.name}“ gestartet. ${s.desc}` };
+  prevFields = {}; prevSeq = 0;
+  renderTabs(); render();
+}
+
+function renderScenario() {
+  if (scen.idx === null) {
+    $('scen').innerHTML = '<p class="scen-desc">Wähle ein Szenario. Jedes startet von einem festen Zustand, die Schritte drückst du der Reihe nach. Freispiel geht jederzeit, nur passen die Schritte danach vielleicht nicht mehr.</p>';
+    return;
+  }
+  const s = SCENARIOS[scen.idx];
+  const finished = scen.step >= s.steps.length;
+  const nextOk = !finished && canRun(s.steps[scen.step][1]);
+  $('scen').innerHTML = `
+    <div style="display:grid;gap:10px">
+      <p class="scen-desc">${s.desc}</p>
+      <p class="watch"><strong>Worauf achten:</strong> ${s.watch}</p>
+      <ol class="steps">${s.steps.map(([label], k) => `<li class="${k < scen.step ? 'done' : k === scen.step ? 'next' : ''}"><button data-k="${k}" ${k === scen.step && nextOk ? '' : 'disabled'}>${label}</button></li>`).join('')}</ol>
+      ${!finished && !nextOk ? '<p class="small">Der nächste Schritt passt nicht mehr zum Zustand. Das ist das Ziel, wenn du etwas Unmögliches versuchst; sonst Szenario neu starten.</p>' : ''}
+      ${finished ? '<p class="small">Szenario durchgespielt. Schau dir Ereignisse und Übersicht unten an.</p>' : ''}
+      ${s.ask ? `<p class="ask"><strong>Frage an dich:</strong> ${s.ask}</p>` : ''}
+      <div class="row"><button class="act" id="restart">Szenario neu starten</button></div>
+    </div>`;
+  $('scen').querySelectorAll('[data-k]').forEach(b => b.addEventListener('click', () => {
+    const k = +b.dataset.k; if (k !== scen.step) return;
+    apply(s.steps[k][1]); scen.step++; render();
+  }));
+  $('restart').addEventListener('click', () => startScenario(scen.idx));
+}
+
+// Steuerelemente einmal aufbauen
+$('who').innerHTML = F.PEOPLE.map(p => `<option value="${p}">${p}</option>`).join('');
+$('day').innerHTML = F.DAYS.map(d => `<option value="${d}">Tag ${d}</option>`).join('');
+$('today').innerHTML = F.DAYS.map(d => `<option value="${d}">Tag ${d}</option>`).join('');
+$('who').addEventListener('change', e => { apply([{ type: 'choose', who: e.target.value }]); render(); });
+$('day').addEventListener('change', e => { apply([{ type: 'choose', day: +e.target.value }]); render(); });
+$('today').addEventListener('change', e => { apply([{ type: 'setToday', today: +e.target.value }]); render(); });
+$('autoplay').addEventListener('change', () => { apply([{ type: 'toggleAutoplay' }]); render(); });
+$('resume').addEventListener('change', () => { apply([{ type: 'toggleResume' }]); render(); });
+
+renderTabs();
+render();
+</script>
