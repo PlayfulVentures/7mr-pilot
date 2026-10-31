@@ -35,6 +35,7 @@
 {"@type":"Question","name":"Kann ich stornieren?","acceptedAnswer":{"@type":"Answer","text":"Ja. Bis zum Start bekommst du dein Geld jederzeit vollständig zurück, eine kurze Mail genügt. Startet der Pilot nicht, erstatten wir automatisch."}},
 {"@type":"Question","name":"Was, wenn ich einen Tag verpasse?","acceptedAnswer":{"@type":"Answer","text":"Kein Problem. Du bekommst eine zweite, freundliche Erinnerung, und die Session bleibt abrufbar."}},
 {"@type":"Question","name":"Woher weiß ich, welche Übungen mir guttun?","acceptedAnswer":{"@type":"Answer","text":"Musst du nicht wissen. Jede Session ist angeleitet: Play drücken und mitmachen."}},
+{"@type":"Question","name":"Ist das jeden Tag dasselbe?","acceptedAnswer":{"@type":"Answer","text":"Nein. Jeder Tag hat einen anderen Schwerpunkt, zum Beispiel Schultern, Nacken, Hüfte oder Rotation. Immer 7 Minuten, immer angeleitet."}},
 {"@type":"Question","name":"Reicht nicht ein besserer Stuhl?","acceptedAnswer":{"@type":"Answer","text":"Ein guter Stuhl macht das Sitzen angenehmer. Bewegung ersetzt er nicht, dafür sind die 7 Minuten da."}},
 {"@type":"Question","name":"Was brauche ich?","acceptedAnswer":{"@type":"Answer","text":"Eine Matte, etwas Platz am Boden und WhatsApp auf dem Handy. Keine Geräte, keine App."}},
 {"@type":"Question","name":"Ist das eine Therapie?","acceptedAnswer":{"@type":"Answer","text":"Nein. Die Challenge ist ein Bewegungsprogramm für gesunde Erwachsene. Bei Schmerzen, Verletzungen oder Unsicherheit sprich vorher mit deiner Ärztin oder deinem Arzt."}}]}
@@ -136,6 +137,27 @@ dialog.player::backdrop{background:rgba(24,22,18,.88)}
 .player video{display:block;width:100%;height:auto;aspect-ratio:9/16;border-radius:18px;background:#141412}
 .pclose{position:absolute;z-index:1;top:10px;right:10px;width:40px;height:40px;border:0;border-radius:50%;background:rgba(29,29,27,.55);color:#fff;font-size:24px;line-height:1;cursor:pointer}
 .pclose:focus-visible{outline:3px solid rgba(255,255,255,.6);outline-offset:2px}
+.b.voice{width:84%;padding:10px 12px 8px}
+.vrow{display:flex;align-items:center;gap:10px}
+.vplay{flex:none;width:34px;height:34px;border-radius:50%;border:0;padding:0;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.vplay:focus-visible{outline:3px solid rgba(47,107,71,.35);outline-offset:2px}
+.vplay:disabled{background:#b9b3a6;cursor:default}
+.vplay .ic-pause,.voice.playing .vplay .ic-play{display:none}.voice.playing .vplay .ic-pause{display:block}
+.wave{flex:1;min-width:0;height:26px;display:flex;align-items:center;justify-content:space-between;gap:2px;overflow:hidden}
+.wave i{flex:0 0 3px;border-radius:2px;background:#cfc6b4;transition:background .15s}
+.wave i.on{background:var(--green)}
+.vav{position:relative;flex:none;width:34px;height:34px}
+.vav img{display:block;width:34px;height:34px;border-radius:50%;object-fit:cover;background:#e9e2d4}
+.vav svg{position:absolute;right:-3px;bottom:-3px;width:16px;height:16px;border-radius:50%;background:var(--green);box-shadow:0 0 0 2px #fffdf9}
+.vmeta{display:flex;justify-content:space-between;align-items:baseline;margin:2px 0 0 44px}
+.vdur{font-size:11.5px;color:#7c796f;font-variant-numeric:tabular-nums}.vmeta .t{margin:0}
+.vtx{margin:4px 0 0 44px}
+.vtx summary{list-style:none;display:inline-flex;align-items:center;gap:4px;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--green);-webkit-tap-highlight-color:transparent}
+.vtx summary::-webkit-details-marker{display:none}
+.vtx summary svg{transition:transform .2s}.vtx[open] summary svg{transform:rotate(180deg)}
+.vtx summary:focus-visible{outline:2px solid rgba(47,107,71,.4);outline-offset:2px;border-radius:4px}
+.vtx p{margin:6px 0 2px;font-size:13.5px;line-height:1.4;color:var(--muted)}
+@media (max-width:360px){.vav{display:none}}
 
 .who{margin-top:128px;text-align:center}
 .who blockquote{font-family:var(--serif);font-style:italic;font-size:22px;line-height:1.45;margin:24px auto 28px;max-width:460px;color:var(--ink)}
@@ -178,6 +200,7 @@ footer{margin-top:28px;font-size:13px;color:#8a877c;text-align:center;line-heigh
 .js .reveal.in .chat>*:nth-child(1){transition-delay:.3s}
 .js .reveal.in .chat>*:nth-child(2){transition-delay:.75s}
 .js .reveal.in .chat>*:nth-child(3){transition-delay:1.2s}
+.js .reveal.in .chat>*:nth-child(4){transition-delay:1.9s}
 @media (prefers-reduced-motion:reduce){*,*:before{animation-duration:.01ms!important;animation-delay:0s!important}
 .js .reveal *,.js .fade{transition:none!important;opacity:1!important;transform:none!important}}
 </style>
@@ -226,6 +249,16 @@ footer{margin-top:28px;font-size:13px;color:#8a877c;text-align:center;line-heigh
 <div class="from"><svg viewBox="0 0 200 200" aria-hidden="true"><rect width="200" height="200" rx="46" fill="#f7f2e8"/><path d="M104.74 32.17A68 68 0 1 0 164.67 78.99" fill="none" stroke="#2f6b47" stroke-width="16" stroke-linecap="round"/><circle cx="155.35" cy="64.06" r="13" fill="#2f6b47"/></svg>7mr</div>
 <div class="b bot">Heute noch nicht geschafft? Kein Stress, die 7 Minuten passen auch noch vor Feierabend.<span class="t">17:30</span></div>
 <div class="b me">Danke, mach ich jetzt.<span class="t">17:32</span></div>
+<div class="b bot voice">
+<div class="vrow">
+<button class="vplay" type="button" aria-label="Sprachnachricht abspielen"><svg class="ic-play" width="14" height="14" viewBox="0 0 20 20" aria-hidden="true"><path d="M6 3.8v12.4c0 .6.7 1 1.2.7l9.6-6.2c.5-.3.5-1 0-1.4L7.2 3.1C6.7 2.8 6 3.2 6 3.8z" fill="currentColor"/></svg><svg class="ic-pause" width="14" height="14" viewBox="0 0 20 20" aria-hidden="true"><rect x="4.5" y="3.5" width="4" height="13" rx="1.2" fill="currentColor"/><rect x="11.5" y="3.5" width="4" height="13" rx="1.2" fill="currentColor"/></svg></button>
+<span class="wave" aria-hidden="true"><i style="height:5px"></i><i style="height:20px"></i><i style="height:24px"></i><i style="height:18px"></i><i style="height:8px"></i><i style="height:17px"></i><i style="height:19px"></i><i style="height:11px"></i><i style="height:16px"></i><i style="height:20px"></i><i style="height:17px"></i><i style="height:14px"></i><i style="height:18px"></i><i style="height:9px"></i><i style="height:5px"></i><i style="height:4px"></i><i style="height:6px"></i><i style="height:14px"></i><i style="height:18px"></i><i style="height:11px"></i><i style="height:15px"></i><i style="height:9px"></i><i style="height:16px"></i><i style="height:15px"></i><i style="height:17px"></i><i style="height:12px"></i><i style="height:14px"></i><i style="height:4px"></i></span>
+<span class="vav"><img src="/david.jpg" width="34" height="34" alt="" loading="lazy" decoding="async"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3.6a1.6 1.6 0 0 0-1.6 1.6v2.6a1.6 1.6 0 0 0 3.2 0V5.2A1.6 1.6 0 0 0 8 3.6zM5.2 7.6a2.8 2.8 0 0 0 5.6 0M8 10.4v1.8" fill="none" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/></svg></span>
+</div>
+<div class="vmeta"><span class="vdur">0:06</span><span class="t">17:33</span></div>
+<details class="vtx"><summary>Transkript<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><p>„Nice, freut mich. Tag 3 ist Mobility, das tut nach dem Sitzen richtig gut. Sag mir, wie’s war.“</p></details>
+<audio preload="metadata" src="/voice.m4a"></audio>
+</div>
 </div>
 </div>
 </section>
@@ -244,6 +277,7 @@ footer{margin-top:28px;font-size:13px;color:#8a877c;text-align:center;line-heigh
 <details><summary>Kann ich stornieren?</summary><p>Ja. Bis zum Start bekommst du dein Geld jederzeit vollständig zurück, eine kurze Mail genügt. Startet der Pilot nicht, erstatten wir automatisch. Details in der <a href="/widerruf">Widerrufsbelehrung</a>.</p></details>
 <details><summary>Was, wenn ich einen Tag verpasse?</summary><p>Kein Problem. Du bekommst eine zweite, freundliche Erinnerung, und die Session bleibt abrufbar.</p></details>
 <details><summary>Woher weiß ich, welche Übungen mir guttun?</summary><p>Musst du nicht wissen. Jede Session ist angeleitet: Play drücken und mitmachen.</p></details>
+<details><summary>Ist das jeden Tag dasselbe?</summary><p>Nein. Jeder Tag hat einen anderen Schwerpunkt, zum Beispiel Schultern, Nacken, Hüfte oder Rotation. Immer 7&nbsp;Minuten, immer angeleitet.</p></details>
 <details><summary>Reicht nicht ein besserer Stuhl?</summary><p>Ein guter Stuhl macht das Sitzen angenehmer. Bewegung ersetzt er nicht, dafür sind die 7 Minuten da.</p></details>
 <details><summary>Was brauche ich?</summary><p>Eine Matte, etwas Platz am Boden und WhatsApp auf dem Handy. Keine Geräte, keine App.</p></details>
 <details><summary>Ist das eine Therapie?</summary><p>Nein. Die Challenge ist ein Bewegungsprogramm für gesunde Erwachsene. Bei Schmerzen, Verletzungen oder Unsicherheit sprich vorher mit deiner Ärztin oder deinem Arzt.</p></details>
@@ -293,6 +327,22 @@ dlg.addEventListener('close',()=>vid.pause());
 const seen={};vid.addEventListener('timeupdate',()=>{if(!vid.duration)return;const pc=vid.currentTime/vid.duration*100;
 [25,50,75,95].forEach(m=>{if(pc>=m&&!seen[m]){seen[m]=1;mr('video_progress',{percent:m})}})});}
 document.querySelectorAll('[data-pay]').forEach((a,i)=>a.addEventListener('click',()=>mr('checkout_clicked',{position:i?'end':'hero'},{beacon:true})));
+// Sprachnachricht: Play/Pause, Wellenform füllt sich, Dauer kommt aus der Datei. Fehlt die Datei, bleibt der Knopf aus.
+document.querySelectorAll('.voice').forEach(v=>{
+const a=v.querySelector('audio'),btn=v.querySelector('.vplay'),bars=[...v.querySelectorAll('.wave i')],dur=v.querySelector('.vdur');
+const fmt=s=>Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');
+const total=()=>{if(isFinite(a.duration))dur.textContent=fmt(a.duration)};
+const paint=()=>{const n=a.duration?Math.ceil(a.currentTime/a.duration*bars.length):0;bars.forEach((b,i)=>b.classList.toggle('on',i<n))};
+const off=()=>{btn.disabled=true;btn.setAttribute('aria-label','Sprachnachricht folgt')};
+if(a.error)off();
+a.addEventListener('error',off);
+a.addEventListener('loadedmetadata',total);
+a.addEventListener('timeupdate',()=>{paint();if(!a.paused)dur.textContent=fmt(a.currentTime)});
+a.addEventListener('play',()=>{v.classList.add('playing');btn.setAttribute('aria-label','Sprachnachricht pausieren')});
+a.addEventListener('pause',()=>{v.classList.remove('playing');btn.setAttribute('aria-label','Sprachnachricht abspielen')});
+a.addEventListener('ended',()=>{a.currentTime=0;paint();total()});
+btn.addEventListener('click',()=>{if(a.paused){if(vid)vid.pause();const p=a.play();if(p&&p.catch)p.catch(()=>{})}else a.pause()});
+});
 const els=document.querySelectorAll('.reveal,.fade');
 if('IntersectionObserver' in window){const io=new IntersectionObserver(es=>es.forEach(en=>{if(en.isIntersecting){en.target.classList.add('in');io.unobserve(en.target)}}),{threshold:.2});els.forEach(el=>io.observe(el));}
 else els.forEach(el=>el.classList.add('in'));
