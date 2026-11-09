@@ -5,7 +5,7 @@ var KEY='7mr_consent', V=1;
 var PH_KEY='phc_rwCgVEuNkFtfvjUX8Zcoa8h7aheUcLxtrkjf8JPv54sV', PH_HOST='https://eu.i.posthog.com';
 var META_PIXEL='601275581981813';
 var PH_EVENT={video_opened:'session_video_opened',video_progress:'session_video_progress',checkout_clicked:'checkout_clicked',purchase:'pilot_purchased'};
-var META_EVENT={video_opened:['ViewContent',{content_name:'Beispiel-Session',content_type:'video'}],checkout_clicked:['InitiateCheckout',{value:29,currency:'EUR'}],purchase:['Purchase',{value:29,currency:'EUR'}]};
+var META_EVENT={video_opened:['ViewContent',{content_name:'Beispiel-Session',content_type:'video'}],checkout_clicked:['InitiateCheckout',{value:46.99,currency:'EUR'}],purchase:['Purchase',{value:46.99,currency:'EUR'}]};
 var pending=[], loaded={stats:false,marketing:false};
 
 function read(){try{var c=JSON.parse(localStorage.getItem(KEY)||'null');return c&&c.v===V?c:null}catch(e){return null}}
