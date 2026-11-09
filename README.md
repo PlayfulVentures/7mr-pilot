@@ -1,6 +1,6 @@
 # 7mr-pilot
 
-Landingpage (7minutereset.de) und Session-Player für den 14-Tage-Pilot ab 23.11.2026.
+Landingpage (7minutereset.de) und Session-Player für den 21-Tage-Pilot ab 23.11.2026.
 
 - `public/`: Landingpage, statisch, ohne Build. Kommt 1:1 aus dem Production-Deployment `dpl_Gjfj3PEP9N4VrwDs6zsZhEuWS7es`.
 - `docs/player-ernte.md`: was der neue Player vom alten übernimmt.
